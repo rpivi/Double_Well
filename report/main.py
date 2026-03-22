@@ -1,6 +1,6 @@
-import metropolis as metro
-import plot as plot
-import observable as obs
+import report.metropolis as metro
+import report.plot as plot
+import report.observable as obs
 import jax
 import jax.numpy as jnp
 
