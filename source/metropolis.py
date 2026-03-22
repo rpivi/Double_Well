@@ -1,7 +1,7 @@
 import jax 
 import jax.numpy as jnp
 import functools
-import report.observable as obs
+import source.observable as obs
 
 @functools.partial(jax.jit, static_argnums=(1,))
 def generate_config(key, D):
