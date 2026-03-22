@@ -34,8 +34,8 @@ def main():
             results[D]["Cv"].append(Cv)
             results[D]["acceptance"].append(acceptance_rate)
 
-        plot.plot_obs__D_T(results, dimensions, "E_mean")
-        plot.plot_obs__D_T(results, dimensions, "Cv")
+    plot.plot_obs__D_T(results, dimensions, "E_mean")
+    plot.plot_obs__D_T(results, dimensions, "Cv")
 
 
 if __name__ == "__main__":
