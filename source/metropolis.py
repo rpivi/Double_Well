@@ -3,10 +3,19 @@ import jax.numpy as jnp
 import functools
 import observable as obs
 
-@functools.partial(jax.jit, static_argnums=(1,))
-def generate_config(key, D):
+@functools.partial(jax.jit, static_argnums=(1,2))
+def generate_config(key, D, type="uniform"):
     key, subkey = jax.random.split(key)
-    x = jax.random.uniform(subkey, shape=(D,))
+    if type == "uniform":
+        x = jax.random.uniform(subkey, shape=(D,))
+    elif type == "normal":
+        x = jax.random.normal(subkey, shape=(D,))
+    elif type == "zeros":
+        x = jnp.zeros(D)
+    elif type == "ones":
+        x = jnp.ones(D)
+    else:
+        raise ValueError(f"Tipo di configurazione sconosciuto: {type}")
     return x, key
 
 @functools.partial(jax.jit, static_argnums=(1,))

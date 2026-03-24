@@ -31,3 +31,16 @@ def integrated_autocorrelation_time(x, c=5.0):
         if t >= c * tau:  # finestra self-consistent
             break
     return tau
+
+def append_observables(results, D, T, trajectory, acceptance_rate):
+    E_mean = mean_energy(trajectory)
+    Cv = heat_capacity(trajectory, T)
+    tau_x= integrated_autocorrelation_time(trajectory[:,0])
+    tau_x2 = integrated_autocorrelation_time(trajectory[:,0]**2)
+
+    results[D]["T"].append(T)
+    results[D]["E_mean"].append(E_mean)
+    results[D]["Cv"].append(Cv)
+    results[D]["acceptance"].append(acceptance_rate)
+    results[D]["tau_x"].append(tau_x)
+    results[D]["tau_x^2"].append(tau_x2)
