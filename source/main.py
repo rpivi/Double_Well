@@ -7,9 +7,9 @@ import jax.numpy as jnp
 
 def main():
     dimensions = [1, 2, 5, 7]
-    temperatures = [0.05 ,0.1, 0.5, 1.0, 1.5, 2.0, 3.0]
+    temperatures = [0.05 ,0.1, 0.5, 1.0, 2.0, 5.0]
     n_thermalization = 200000
-    n_steps = 50000
+    n_steps = 100000
     step_size = 0.1
 
     trajectories = {}
@@ -44,7 +44,7 @@ def main():
             print(f"D={D}, T={T:.3f}.")
     # plot results
     plot.plot_obs__D_T(results, dimensions, "E_mean", error=True)
-    plot.plot_obs__D_T(results, dimensions, "Cv", error=True)
+    plot.plot_obs__D_T(results, dimensions, "Cv")
     plot.plot_obs__D_T(results, dimensions, "tau_x")
     plot.plot_obs__D_T(results, dimensions, "acceptance")
     plot.plot_obs__D_T(results, dimensions, "barrier_crossings_rate", error=True)

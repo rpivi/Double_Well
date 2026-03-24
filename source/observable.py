@@ -3,8 +3,11 @@ import jax.numpy as jnp
 
 @jax.jit
 def V(x, a=1.0, b=1.0):
-    return a * (x[0]**2 - b)**2 + 0.5 * jnp.sum(x[1:]**2)
-
+    if x.shape[0] == 1:
+        return a * (x[0]**2 - b)**2
+    else:
+        return a * (x[0]**2 - b)**2 + 0.5 * jnp.sum(x[1:]**2)
+    
 def mean_energy(trajectory):
     energies = jax.vmap(V)(trajectory)
     return jnp.mean(energies)
@@ -33,7 +36,7 @@ def integrated_autocorrelation_time(x, c=5.0):
     tau = 0.5
     for t in range(1, len(corr)):
         tau += corr[t]
-        if t >= c * tau:  # finestra self-consistent
+        if t >= c * tau:  # stop when t exceeds c times the current estimate of tau
             break
     return tau
 
@@ -45,7 +48,7 @@ def barrier_crossings_rate(trajectory, eps=1e-3):
 
     signs = jnp.sign(x)
 
-    return jnp.sum(signs[:-1] * signs[1:] < 0)/len(x)
+    return jnp.sum(signs[:-1] * signs[1:] < 0)/len(x) # rate of crossings per unit time
 
 def blocking_error(data, block_size):
     n_blocks = len(data) // block_size
@@ -64,7 +67,6 @@ def append_observables(results, trajectories, D, T, trajectory, acceptance_rate)
     E_mean = mean_energy(trajectory)
     E_mean_err = blocking_error(jax.vmap(V)(trajectory), block_size)
     Cv = heat_capacity(trajectory, T)
-    Cv_err = blocking_error(jax.vmap(lambda x: (V(x) - E_mean)**2)(trajectory), block_size)
     crossings_r = barrier_crossings_rate(trajectory)
     crossings_r_err = jnp.sqrt(crossings_r)/len(trajectory[:,0])  # standard error assuming Poisson distribution
 
@@ -72,11 +74,10 @@ def append_observables(results, trajectories, D, T, trajectory, acceptance_rate)
     results[D]["E_mean"].append(E_mean)
     results[D]["E_mean_err"].append(E_mean_err)
     results[D]["Cv"].append(Cv)
-    results[D]["Cv_err"].append(Cv_err)
     results[D]["acceptance"].append(acceptance_rate)
     results[D]["tau_x"].append(tau_x)
     results[D]["barrier_crossings_rate"].append(crossings_r)
     results[D]["barrier_crossings_rate_err"].append(crossings_r_err)
-    
+
     trajectories[D].append(trajectory[:,0])
     
