@@ -1,12 +1,12 @@
 import jax 
 import jax.numpy as jnp
 import functools
-import source.observable as obs
+import observable as obs
 
 @functools.partial(jax.jit, static_argnums=(1,))
 def generate_config(key, D):
     key, subkey = jax.random.split(key)
-    x = jax.random.normal(subkey, shape=(D,))
+    x = jax.random.uniform(subkey, shape=(D,))
     return x, key
 
 @functools.partial(jax.jit, static_argnums=(1,))
@@ -41,22 +41,19 @@ def metropolis_step(x, key, T, step_size=0.1):
     x_new = jnp.where(accept, x_proposed, x)
     return x_new, key, accept
 
-@functools.partial(jax.jit, static_argnums=(1, 3, 5))
-def run_simulation(key, D, T, n_steps, step_size=0.1, initial_config="random"):
-    x, key = generate_config(key, D)
-    if initial_config == "zeros":
-        x = jnp.zeros(D)
-    if initial_config == "ones":
-        x = jnp.ones(D)
-    if initial_config == "-ones":
-        x = jnp.ones(D) *(-1)
+@functools.partial(jax.jit, static_argnums=(2,))
+def run_simulation(key, T, n_steps, step_size=0.1, initial_x=None):
+    if initial_x is None:
+        raise ValueError("initial_x must be provided")
+    
+    x = initial_x
 
     def body(carry, _):
         x, key, acc = carry
         x, key, accepted = metropolis_step(x, key, T, step_size)
         return (x, key, acc + accepted), x
 
-    (_, _, acceptances), trajectory = jax.lax.scan(
+    (x_final, keyfinal, acceptances), trajectory = jax.lax.scan(
         body, (x, key, 0), None, length=n_steps
     )
-    return trajectory, acceptances / n_steps
+    return trajectory, acceptances / n_steps, keyfinal, x_final

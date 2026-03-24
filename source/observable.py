@@ -16,4 +16,18 @@ def heat_capacity(trajectory, T):
     Cv = (mean_E2 - mean_E**2) / (T**2)
     return Cv
 
+def autocorrelation(x):
+    x = x - jnp.mean(x)
+    n = len(x)
+    f = jnp.fft.fft(x, n=2*n)
+    corr = jnp.fft.ifft(f * jnp.conj(f)).real[:n]
+    return corr / corr[0]
 
+def integrated_autocorrelation_time(x, c=5.0):
+    corr = autocorrelation(x)
+    tau = 0.5
+    for t in range(1, len(corr)):
+        tau += float(corr[t])
+        if t >= c * tau:  # finestra self-consistent
+            break
+    return tau
