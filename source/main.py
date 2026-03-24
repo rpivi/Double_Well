@@ -9,7 +9,7 @@ def main():
     dimensions = [2, 5, 10]
     temperatures = jnp.linspace(0.5, 3.0, 6)
     n_thermalization = 20000
-    n_steps = 80000
+    n_steps = 3000
     step_size = 0.1
     trajectories = {}
 
@@ -30,8 +30,9 @@ def main():
         x, key = metro.generate_config(key, D, "zeros")
 
         for T in temperatures:
+            # thermalization
             _, _, key , x = metro.run_simulation(key, T, n_thermalization, step_size, initial_x=x)
-
+            # production
             trajectory, acceptance_rate, key , x = metro.run_simulation(
                 key, T, n_steps, step_size, initial_x=x)
             

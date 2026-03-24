@@ -44,7 +44,6 @@ def plot_trajectory(trajectories, temperatures, dimensions):
             ax.set_xlabel("x[0]")
             ax.set_ylabel("Density")
     plt.tight_layout()
-    plt.legend()
     filename = f"trajectories_density.png"
     filepath = os.path.join(REPORT_DIR, filename)
     plt.savefig(filepath, dpi=150, bbox_inches="tight")
