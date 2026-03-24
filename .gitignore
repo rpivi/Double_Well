@@ -7,11 +7,6 @@ jax_cache/
 .ipynb_checkpoints/
 *.ipynb
  
-# Report output (immagini generate)
-report/*.png
-report/*.pdf
-report/*.svg
- 
 # IDE
 .vscode/
 .idea/
