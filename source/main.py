@@ -11,9 +11,12 @@ def main():
     n_thermalization = 20000
     n_steps = 80000
     step_size = 0.1
+    trajectories = {}
 
     results = {}
     for D in dimensions:
+
+        trajectories[D] = []
 
         results[D] = {
             "T": [],
@@ -31,8 +34,9 @@ def main():
 
             trajectory, acceptance_rate, key , x = metro.run_simulation(
                 key, T, n_steps, step_size, initial_x=x)
+            
 
-            obs.append_observables(results, D, T, trajectory, acceptance_rate)
+            obs.append_observables(results,trajectories, D, T, trajectory, acceptance_rate)
             print(f"D={D}, T={T:.3f}.")
 
     plot.plot_obs__D_T(results, dimensions, "E_mean")
@@ -40,7 +44,7 @@ def main():
     plot.plot_obs__D_T(results, dimensions, "tau_x")
     plot.plot_obs__D_T(results, dimensions, "tau_x^2")
     plot.plot_obs__D_T(results, dimensions, "acceptance")
-
+    plot.plot_trajectory(trajectories, temperatures, dimensions)
 
 if __name__ == "__main__":
     main()

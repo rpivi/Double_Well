@@ -32,7 +32,7 @@ def integrated_autocorrelation_time(x, c=5.0):
             break
     return tau
 
-def append_observables(results, D, T, trajectory, acceptance_rate):
+def append_observables(results, trajectories, D, T, trajectory, acceptance_rate):
     E_mean = mean_energy(trajectory)
     Cv = heat_capacity(trajectory, T)
     tau_x= integrated_autocorrelation_time(trajectory[:,0])
@@ -44,3 +44,6 @@ def append_observables(results, D, T, trajectory, acceptance_rate):
     results[D]["acceptance"].append(acceptance_rate)
     results[D]["tau_x"].append(tau_x)
     results[D]["tau_x^2"].append(tau_x2)
+
+    trajectories[D].append(trajectory[:,0])
+    
