@@ -18,7 +18,7 @@ def main():
         results[D] = {
             "T": [],
             "E_mean": [],
-            "Cv_D": [],
+            "Cv": [],
             "acceptance": [],
             "tau_x": [],
             "tau_x^2": []
@@ -36,7 +36,7 @@ def main():
             print(f"D={D}, T={T:.3f}.")
 
     plot.plot_obs__D_T(results, dimensions, "E_mean")
-    plot.plot_obs__D_T(results, dimensions, "Cv_D")
+    plot.plot_obs__D_T(results, dimensions, "Cv")
     plot.plot_obs__D_T(results, dimensions, "tau_x")
     plot.plot_obs__D_T(results, dimensions, "tau_x^2")
     plot.plot_obs__D_T(results, dimensions, "acceptance")
