@@ -38,12 +38,12 @@ def metropolis_acceptance(delta_E, T):
 @jax.jit
 def metropolis_step(x, key, T, step_size=0.1):
     D = x.shape[0]
-    # nuova configurazione proposta
+    # new proposed configuration
     eta, key = generate_normal(key,D)
     x_proposed = x + step_size * eta
-    # calcola la differenza di energia
+    # delta energy between new and old configuration
     delta_E = obs.V(x_proposed) - obs.V(x)
-    # accetta o rifiuta la nuova configurazione
+    # acceptance of the new configuration
     accept_prob = metropolis_acceptance(delta_E, T)
     u, key = generate_uniform(key)
     accept = u < accept_prob
@@ -62,7 +62,7 @@ def run_simulation(key, T, n_steps, step_size=0.1, initial_x=None):
         x, key, accepted = metropolis_step(x, key, T, step_size)
         return (x, key, acc + accepted), x
 
-    (x_final, keyfinal, acceptances), trajectory = jax.lax.scan(
+    (x, key, acceptances), trajectory = jax.lax.scan(
         body, (x, key, 0), None, length=n_steps
     )
-    return trajectory, acceptances / n_steps, keyfinal, x_final
+    return trajectory, acceptances / n_steps, key, trajectory[-1]

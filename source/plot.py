@@ -31,15 +31,14 @@ def plot_obs__D_T(results, dimensions, observable):
     print(f"Grafico salvato in: {filepath}")
     plt.close()
 
-def plot_trajectory(trajectories, temperatures, dimensions):
+def plot_trajectory(trajectories, temperatures, dimensions, bins=30):
     _ensure_report_dir()
-
     #one image with subplots for each dimension and temperature
     fig, axes = plt.subplots(len(dimensions), len(temperatures), figsize=(15, 10))
     for i, D in enumerate(dimensions):
         for j, T in enumerate(temperatures):
             ax = axes[i, j]
-            ax.hist(trajectories[D][j], bins=30, density=True)
+            ax.hist(trajectories[D][j], bins=bins, density=True)
             ax.set_title(f"D={D}, T={T:.2f}")
             ax.set_xlabel("x[0]")
             ax.set_ylabel("Density")

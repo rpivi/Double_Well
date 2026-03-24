@@ -6,10 +6,10 @@ import jax.numpy as jnp
 
 
 def main():
-    dimensions = [2, 5, 10]
+    dimensions = [1, 2, 5, 10]
     temperatures = jnp.linspace(0.5, 3.0, 6)
-    n_thermalization = 20000
-    n_steps = 3000
+    n_thermalization = 40000
+    n_steps = 5000
     step_size = 0.1
     trajectories = {}
 
@@ -45,7 +45,7 @@ def main():
     plot.plot_obs__D_T(results, dimensions, "tau_x")
     plot.plot_obs__D_T(results, dimensions, "tau_x^2")
     plot.plot_obs__D_T(results, dimensions, "acceptance")
-    plot.plot_trajectory(trajectories, temperatures, dimensions)
+    plot.plot_trajectory(trajectories, temperatures, dimensions, bins=30)
 
 if __name__ == "__main__":
     main()
