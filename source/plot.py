@@ -29,6 +29,4 @@ def plot_obs__D_T(results, dimensions, observable):
     filepath = os.path.join(REPORT_DIR, filename)
     plt.savefig(filepath, dpi=150, bbox_inches="tight")
     print(f"Grafico salvato in: {filepath}")
- 
-    plt.show()
     plt.close()
