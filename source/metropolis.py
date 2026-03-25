@@ -3,26 +3,27 @@ import jax.numpy as jnp
 import functools
 import observable as obs
 
-@functools.partial(jax.jit, static_argnums=(1,2))
 def generate_config(key, D, type="uniform"):
-    key, subkey = jax.random.split(key)
     if type == "uniform":
-        x = jax.random.uniform(subkey, shape=(D,))
+        return generate_uniform_vec(key, D)
     elif type == "normal":
-        x = jax.random.normal(subkey, shape=(D,))
+        return generate_normal_vec(key, D)
     elif type == "zeros":
-        x = jnp.zeros(D)
+        return jnp.zeros(D), key
     elif type == "ones":
-        x = jnp.ones(D)
+        return jnp.ones(D), key
     else:
-        raise ValueError(f"Tipo di configurazione sconosciuto: {type}")
-    return x, key
+        raise ValueError("Tipo non valido")
 
 @functools.partial(jax.jit, static_argnums=(1,))
-def generate_normal(key,D):
+def generate_uniform_vec(key, D):
     key, subkey = jax.random.split(key)
-    x = jax.random.normal(subkey, shape=(D,))
-    return x, key
+    return jax.random.uniform(subkey, shape=(D,)), key
+
+@functools.partial(jax.jit, static_argnums=(1,))
+def generate_normal_vec(key, D):
+    key, subkey = jax.random.split(key)
+    return jax.random.normal(subkey, shape=(D,)), key
     
 @jax.jit
 def generate_uniform(key):
@@ -36,13 +37,13 @@ def metropolis_acceptance(delta_E, T):
     return A
 
 @jax.jit
-def metropolis_step(x, key, T, step_size=0.1):
+def metropolis_step(x, key, T, step_size=0.1, a=1.0, b=1.0):
     D = x.shape[0]
     # new proposed configuration
-    eta, key = generate_normal(key,D)
+    eta, key = generate_normal_vec(key,D)
     x_proposed = x + step_size * eta
     # delta energy between new and old configuration
-    delta_E = obs.V(x_proposed) - obs.V(x)
+    delta_E = obs.V(x_proposed,a,b) - obs.V(x,a,b)
     # acceptance of the new configuration
     accept_prob = metropolis_acceptance(delta_E, T)
     u, key = generate_uniform(key)
@@ -51,7 +52,7 @@ def metropolis_step(x, key, T, step_size=0.1):
     return x_new, key, accept
 
 @functools.partial(jax.jit, static_argnums=(2,))
-def run_simulation(key, T, n_steps, step_size=0.1, initial_x=None):
+def run_simulation(key, T, n_steps, step_size=0.1, initial_x=None, a=1.0, b=1.0):
     if initial_x is None:
         raise ValueError("initial_x must be provided")
     
@@ -59,7 +60,7 @@ def run_simulation(key, T, n_steps, step_size=0.1, initial_x=None):
 
     def body(carry, _):
         x, key, acc = carry
-        x, key, accepted = metropolis_step(x, key, T, step_size)
+        x, key, accepted = metropolis_step(x, key, T, step_size, a, b)
         return (x, key, acc + accepted), x
 
     (x, key, acceptances), trajectory = jax.lax.scan(
