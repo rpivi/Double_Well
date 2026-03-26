@@ -12,6 +12,8 @@ def generate_config(key, D, type="uniform"):
         return jnp.zeros(D), key
     elif type == "ones":
         return jnp.ones(D), key
+    elif type == "-ones":
+        return -jnp.ones(D), key
     else:
         raise ValueError("Tipo non valido")
 

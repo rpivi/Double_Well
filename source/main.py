@@ -7,14 +7,33 @@ import jax.numpy as jnp
 
 def main():
     dimensions = [1, 2, 5]
-    temperatures = jnp.linspace(0.5, 3.0, 6)
-    n_thermalization = 100000
-    n_steps = 10000
-    step_size = 0.2
+    temperatures = jnp.linspace(0.1, 2.0, 10)
+    n_thermalization = 70000
+    n_steps = 40000
+    step_size = 0.1
     # potential parameters
     a = 1.0
-    b = 3.0
+    b = 1.0
 
+    #thermalization example for 3 configurations
+    D = 2
+    T = 0.4
+
+    key = jax.random.PRNGKey(0)
+    x1, key = metro.generate_config(key, D, "ones")
+    trajectory1, _, _, _ = metro.run_simulation(key, T, n_thermalization, step_size, x1, a, b)
+
+    key = jax.random.PRNGKey(0)
+    x2, key = metro.generate_config(key, D, "-ones")
+    trajectory_1, _, _, _ = metro.run_simulation(key, T, n_thermalization, step_size, x2, a, b)
+
+    key = jax.random.PRNGKey(0)
+    x3, key = metro.generate_config(key, D, "normal")
+    trajectoryR, _, _, _ = metro.run_simulation(key, T, n_thermalization, step_size, x3, a, b)
+    
+    plot.plot_thermalization_energies(trajectory1, trajectory_1, trajectoryR, T, D, n_thermalization)
+
+    #simulations for different dimensions and temperatures
     trajectories = {}
     results = {}
     for D in dimensions:
@@ -33,8 +52,8 @@ def main():
 
         key = jax.random.PRNGKey(0)
         x, key = metro.generate_config(key, D, "ones")
-
         for T in temperatures:
+            
             # thermalization 
             _, _, key , x = metro.run_simulation(key, T, n_thermalization, step_size, initial_x=x, a=a, b=b)
             # x is the last configuration of the thermalization, used as initial configuration for the production
@@ -45,6 +64,7 @@ def main():
             # append observables to results
             obs.append_observables(results,trajectories, D, T, trajectory, acceptance_rate, a, b)
             print(f"D={D}, T={T:.3f}.")
+
     # plot results
     plot.plot_obs__D_T(results, dimensions, "E_mean", error=True)
     plot.plot_obs__D_T(results, dimensions, "Cv", error=True)
