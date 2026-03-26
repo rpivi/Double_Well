@@ -6,14 +6,16 @@ import jax.numpy as jnp
 
 
 def main():
-    dimensions = [1, 2, 5]
-    temperatures = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5,1.0, 1.5, 2.0]
-    n_thermalization = 10000
-    n_steps = 200000
+    dimensions = [1, 2, 3, 5]
+    temperatures = [0.05, 0.1,0.15,0.18, 0.2, 0.22, 0.4, 0.6, 0.8, 1, 2]
+    n_thermalization = 20000
+    n_steps = 300000
     step_size = 0.1
     # potential parameters
     a = 1.0
     b = 1.0
+    #blocking threshold
+    threshold = 0.2
 
     #thermalization example for 3 configurations
     D = 2
@@ -58,9 +60,10 @@ def main():
             trajectory, acceptance_rate, key , x = metro.run_simulation(
                 key, T, n_steps, step_size, initial_x=x, a=a, b=b)
             # x is the last configuration of the trajectory, used as initial configuration for the next temperature
+
             # append observables to results
-            obs.append_observables(results,trajectories, D, T, trajectory, acceptance_rate, a, b)
-            print(f"D={D}, T={T:.3f}.")
+            obs.append_observables(results,trajectories, D, T, trajectory, acceptance_rate, a, b, threshold)
+            print(f"D={D}, T={T:.3f}")
 
     # plot results
     plot.plot_obs_D_T(results, dimensions, "E_mean", error=True)
