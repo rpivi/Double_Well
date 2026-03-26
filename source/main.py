@@ -13,7 +13,7 @@ def main():
     step_size = 0.2
     # potential parameters
     a = 1.0
-    b = 2.0
+    b = 3.0
 
     trajectories = {}
     results = {}
@@ -43,7 +43,7 @@ def main():
                 key, T, n_steps, step_size, initial_x=x, a=a, b=b)
             # x is the last configuration of the trajectory, used as initial configuration for the next temperature
             # append observables to results
-            obs.append_observables(results,trajectories, D, T, trajectory, acceptance_rate)
+            obs.append_observables(results,trajectories, D, T, trajectory, acceptance_rate, a, b)
             print(f"D={D}, T={T:.3f}.")
     # plot results
     plot.plot_obs__D_T(results, dimensions, "E_mean", error=True)
