@@ -7,7 +7,7 @@ import jax.numpy as jnp
 
 def main():
     dimensions = [1, 2, 5]
-    temperatures = jnp.linspace(0.1, 2.0, 10)
+    temperatures = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5,1.0, 1.5, 2.0]
     n_thermalization = 10000
     n_steps = 200000
     step_size = 0.1
@@ -17,17 +17,15 @@ def main():
 
     #thermalization example for 3 configurations
     D = 2
-    T = 0.4
+    T = 0.5
 
     key = jax.random.PRNGKey(0)
     x1, key = metro.generate_config(key, D, "ones")
     trajectory1, _, _, _ = metro.run_simulation(key, T, n_thermalization, step_size, x1, a, b)
 
-    key = jax.random.PRNGKey(0)
     x2, key = metro.generate_config(key, D, "-ones")
     trajectory_1, _, _, _ = metro.run_simulation(key, T, n_thermalization, step_size, x2, a, b)
 
-    key = jax.random.PRNGKey(0)
     x3, key = metro.generate_config(key, D, "normal")
     trajectoryR, _, _, _ = metro.run_simulation(key, T, n_thermalization, step_size, x3, a, b)
     
@@ -50,7 +48,6 @@ def main():
             "tau_x": []
         }
 
-        key = jax.random.PRNGKey(0)
         x, key = metro.generate_config(key, D, "ones")
         for T in temperatures:
             

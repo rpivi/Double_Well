@@ -77,7 +77,7 @@ def plot_obs_D_T(results, dimensions, observable, error=None):
 def plot_trajectory(trajectories, temperatures, dimensions, bins=30):
     _ensure_report_dir()
 
-    fig, axes = plt.subplots(len(dimensions), len(temperatures), figsize=(15, 10))
+    fig, axes = plt.subplots(len(dimensions), len(temperatures), figsize=(25, 15))
 
     for i, D in enumerate(dimensions):
         for j, T in enumerate(temperatures):
