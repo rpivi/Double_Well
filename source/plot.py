@@ -3,7 +3,6 @@ import os
 import jax
 import jax.numpy as jnp
 import observable as obs
-import numpy as np
 
 REPORT_DIR = os.path.join(os.path.dirname(__file__), "..", "report")
 
@@ -84,7 +83,7 @@ def plot_trajectory(trajectories, temperatures, dimensions, bins=30):
         for j, T in enumerate(temperatures):
             ax = axes[i, j]
 
-            weights = np.ones_like(trajectories[D][j]) / len(trajectories[D][j])
+            weights = jnp.ones_like(trajectories[D][j]) / len(trajectories[D][j])
 
             ax.hist(trajectories[D][j], bins=bins, weights=weights, alpha=0.7)
             ax.set_title(f"D={D}, T={T:.2f}")

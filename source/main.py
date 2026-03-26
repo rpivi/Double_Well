@@ -8,8 +8,8 @@ import jax.numpy as jnp
 def main():
     dimensions = [1, 2, 5]
     temperatures = jnp.linspace(0.1, 2.0, 10)
-    n_thermalization = 70000
-    n_steps = 30000
+    n_thermalization = 10000
+    n_steps = 200000
     step_size = 0.1
     # potential parameters
     a = 1.0
