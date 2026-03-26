@@ -9,7 +9,7 @@ def main():
     dimensions = [1, 2, 5]
     temperatures = jnp.linspace(0.1, 2.0, 10)
     n_thermalization = 70000
-    n_steps = 40000
+    n_steps = 30000
     step_size = 0.1
     # potential parameters
     a = 1.0
@@ -66,10 +66,10 @@ def main():
             print(f"D={D}, T={T:.3f}.")
 
     # plot results
-    plot.plot_obs__D_T(results, dimensions, "E_mean", error=True)
-    plot.plot_obs__D_T(results, dimensions, "Cv", error=True)
-    plot.plot_obs__D_T(results, dimensions, "tau_x")
-    plot.plot_obs__D_T(results, dimensions, "acceptance")
+    plot.plot_obs_D_T(results, dimensions, "E_mean", error=True)
+    plot.plot_obs_D_T(results, dimensions, "Cv", error=True)
+    plot.plot_obs_D_T(results, dimensions, "tau_x")
+    plot.plot_obs_D_T(results, dimensions, "acceptance")
     plot.plot_trajectory(trajectories, temperatures, dimensions, bins=30)
 
 if __name__ == "__main__":
