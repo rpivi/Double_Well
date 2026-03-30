@@ -1,31 +1,30 @@
 import jax 
 import jax.numpy as jnp
-import functools
-import observable as obs
+from typing import Callable
 
-def generate_config(key, D, type="uniform"):
-    if type == "uniform":
-        return generate_uniform_vec(key, D)
-    elif type == "normal":
-        return generate_normal_vec(key, D)
-    elif type == "zeros":
-        return jnp.zeros(D), key
-    elif type == "ones":
-        return jnp.ones(D), key
-    elif type == "-ones":
-        return -jnp.ones(D), key
-    else:
-        raise ValueError("Tipo non valido")
+def make_config_generator(D: int, init_type: str = "uniform") -> Callable[[jax.Array], tuple[jax.Array, jax.Array]]:
+    def _generate_config(key: jax.Array) -> tuple[jax.Array, jax.Array]:
+        if init_type == "ones":
+            return jnp.ones(D), key
+        elif init_type == "-ones":
+            return -jnp.ones(D), key
+        elif init_type == "normal":
+            key, subkey = jax.random.split(key)
+            return jax.random.normal(subkey, shape=(D,)), key
+        else:
+            raise ValueError(f"Unknown init_type: {init_type}, the options are: 'ones', '-ones', 'normal'")
+    return _generate_config
 
-@functools.partial(jax.jit, static_argnums=(1,))
-def generate_uniform_vec(key, D):
+def _uniform_scalar(key: jax.Array) -> tuple[jax.Array, jax.Array]:
     key, subkey = jax.random.split(key)
-    return jax.random.uniform(subkey, shape=(D,)), key
-
-@functools.partial(jax.jit, static_argnums=(1,))
-def generate_normal_vec(key, D):
-    key, subkey = jax.random.split(key)
-    return jax.random.normal(subkey, shape=(D,)), key
+    return jax.random.uniform(subkey), key
+ 
+def make_normal_sampler(D: int) -> Callable[[jax.Array], tuple[jax.Array, jax.Array]]:
+    @jax.jit
+    def _sample(key: jax.Array) -> tuple[jax.Array, jax.Array]:
+        key, subkey = jax.random.split(key)
+        return jax.random.normal(subkey, shape=(D,)), key
+    return _sample
     
 @jax.jit
 def generate_uniform(key):
@@ -34,38 +33,48 @@ def generate_uniform(key):
     return x, key
 
 @jax.jit
-def metropolis_acceptance(delta_E, T):
-    A = jnp.where(delta_E <= 0, 1.0, jnp.exp(-delta_E / T))
-    return A
+def _acceptance(delta_E: jax.Array, T: jax.Array, kb: float) -> jax.Array:
+    return jnp.where(delta_E <= 0, 1.0, jnp.exp(-delta_E / (T * kb)))
 
-@jax.jit
-def metropolis_step(x, key, T, step_size=0.1, a=1.0, b=1.0):
-    D = x.shape[0]
-    # new proposed configuration
-    eta, key = generate_normal_vec(key,D)
-    x_proposed = x + step_size * eta
-    # delta energy between new and old configuration
-    delta_E = obs.V(x_proposed,a,b) - obs.V(x,a,b)
-    # acceptance of the new configuration
-    accept_prob = metropolis_acceptance(delta_E, T)
-    u, key = generate_uniform(key)
-    accept = u < accept_prob
-    x_new = jnp.where(accept, x_proposed, x)
-    return x_new, key, accept
+def make_metropolis_step(D: int, V: Callable, kb: float) -> Callable:
+    sample_noise = make_normal_sampler(D)
+ 
+    @jax.jit
+    def _step(
+        x:         jax.Array,
+        key:       jax.Array,
+        T:         jax.Array,
+        step_size: jax.Array,
+    ) -> tuple[jax.Array, jax.Array, jax.Array]:
+        eta, key = sample_noise(key)
+        x_prop   = x + step_size * eta
+        delta_E  = V(x_prop) - V(x)            # V già specializzato con (a,b)
+        prob     = _acceptance(delta_E, T, kb)
+        u, key   = _uniform_scalar(key)
+        accept   = u < prob
+        return jnp.where(accept, x_prop, x), key, accept
+ 
+    return _step
 
-@functools.partial(jax.jit, static_argnums=(2,))
-def run_simulation(key, T, n_steps, step_size=0.1, initial_x=None, a=1.0, b=1.0):
-    if initial_x is None:
-        raise ValueError("initial_x must be provided")
-    
-    x = initial_x
-
-    def body(carry, _):
-        x, key, acc = carry
-        x, key, accepted = metropolis_step(x, key, T, step_size, a, b)
-        return (x, key, acc + accepted), x
-
-    (x, key, acceptances), trajectory = jax.lax.scan(
-        body, (x, key, 0), None, length=n_steps
-    )
-    return trajectory, acceptances / n_steps, key, trajectory[-1]
+def make_simulation(D: int, n_steps: int, V: Callable, kb: float) -> Callable:
+    step_fn = make_metropolis_step(D, V, kb)
+ 
+    @jax.jit
+    def _run(
+        key:       jax.Array,
+        T:         jax.Array,
+        step_size: jax.Array,
+        initial_x: jax.Array,
+    ) -> tuple[jax.Array, jax.Array, jax.Array, jax.Array]:
+ 
+        def body(carry, _):
+            x, key, acc    = carry
+            x, key, accepted = step_fn(x, key, T, step_size)
+            return (x, key, acc + accepted), x
+ 
+        (x_final, key, total_acc), trajectory = jax.lax.scan(
+            body, (initial_x, key, jnp.int32(0)), None, length=n_steps
+        )
+        return trajectory, total_acc / n_steps, key, x_final
+ 
+    return _run

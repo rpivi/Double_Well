@@ -3,43 +3,49 @@ import plot as plot
 import observable as obs
 import jax
 import jax.numpy as jnp
+from tqdm import tqdm
 
 
 def main():
-    dimensions = [1, 2, 3, 5]
-    temperatures = [0.05, 0.1,0.15,0.18, 0.2, 0.22, 0.4, 0.6, 0.8, 1, 2]
-    n_thermalization = 20000
-    n_steps = 300000
+    dimensions   = [1, 2, 3, 5]
+    # temperatures (K) from 10K to 1000K, one T evry 10K
+    temperatures = jnp.linspace(5, 1005, 100)
+    # k_b in eV/K
+    kb = 8.617333262145e-5
+    #MCMC parameters
+    n_thermalization = 2000
+    n_steps = 103000
     step_size = 0.1
     # potential parameters
-    a = 1.0
+    a = 0.1
     b = 1.0
+    V = obs.make_potential(a, b)
     #blocking threshold
     threshold = 0.2
 
     #thermalization example for 3 configurations
-    D = 2
-    T = 0.5
-
+    D_demo, T_demo = 5, 100
     key = jax.random.PRNGKey(0)
-    x1, key = metro.generate_config(key, D, "ones")
-    trajectory1, _, _, _ = metro.run_simulation(key, T, n_thermalization, step_size, x1, a, b)
-
-    x2, key = metro.generate_config(key, D, "-ones")
-    trajectory_1, _, _, _ = metro.run_simulation(key, T, n_thermalization, step_size, x2, a, b)
-
-    x3, key = metro.generate_config(key, D, "normal")
-    trajectoryR, _, _, _ = metro.run_simulation(key, T, n_thermalization, step_size, x3, a, b)
-    
-    plot.plot_thermalization_energies(trajectory1, trajectory_1, trajectoryR, T, D, n_thermalization)
+ 
+    # factory per generatori e simulazione (compilati una volta per D_demo)
+    run_therm_demo = metro.make_simulation(D_demo, n_thermalization, V, kb)
+ 
+    x1, key = metro.make_config_generator(D_demo, "ones")(key)
+    trajectory1, _, _, _ = run_therm_demo(key, T_demo, step_size, x1)
+ 
+    x2, key = metro.make_config_generator(D_demo, "-ones")(key)
+    trajectory_1, _, _, _ = run_therm_demo(key, T_demo, step_size, x2)
+ 
+    x3, key = metro.make_config_generator(D_demo, "normal")(key)
+    trajectoryR, _, _, _ = run_therm_demo(key, T_demo, step_size, x3)
+ 
+    plot.plot_thermalization_energies(
+        trajectory1, trajectory_1, trajectoryR,
+        T_demo, D_demo, n_thermalization, V )
 
     #simulations for different dimensions and temperatures
-    trajectories = {}
     results = {}
     for D in dimensions:
-
-        trajectories[D] = []
-
         results[D] = {
             "T": [],
             "E_mean": [],
@@ -47,30 +53,32 @@ def main():
             "Cv": [],
             "Cv_err": [],
             "acceptance": [],
-            "tau_x": []
+            "tau_x": [],
+            "trajectory_x": []
         }
 
-        x, key = metro.generate_config(key, D, "ones")
-        for T in temperatures:
+        gen_config = metro.make_config_generator(D, "ones")
+        run_therm  = metro.make_simulation(D, n_thermalization, V, kb)
+        run_prod   = metro.make_simulation(D, n_steps, V, kb)
+
+        x, key = gen_config(key)
+        for T in tqdm(temperatures, desc=f"D={D}", unit="T"):
             
             # thermalization 
-            _, _, key , x = metro.run_simulation(key, T, n_thermalization, step_size, initial_x=x, a=a, b=b)
+            _, _, key , x = run_therm(key, T, step_size, x)
             # x is the last configuration of the thermalization, used as initial configuration for the production
             # production
-            trajectory, acceptance_rate, key , x = metro.run_simulation(
-                key, T, n_steps, step_size, initial_x=x, a=a, b=b)
+            trajectory, acceptance_rate, key , x = run_prod(key, T, step_size, x)
             # x is the last configuration of the trajectory, used as initial configuration for the next temperature
 
             # append observables to results
-            obs.append_observables(results,trajectories, D, T, trajectory, acceptance_rate, a, b, threshold)
-            print(f"D={D}, T={T:.3f}")
+            obs.append_observables(results, D, T, trajectory, acceptance_rate, V, threshold, kb)
 
     # plot results
     plot.plot_obs_D_T(results, dimensions, "E_mean", error=True)
     plot.plot_obs_D_T(results, dimensions, "Cv", error=True)
     plot.plot_obs_D_T(results, dimensions, "tau_x")
     plot.plot_obs_D_T(results, dimensions, "acceptance")
-    plot.plot_trajectory(trajectories, temperatures, dimensions, bins=30)
 
 if __name__ == "__main__":
     main()

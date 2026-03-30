@@ -1,13 +1,18 @@
 import jax 
 import jax.numpy as jnp
 import numpy as np  
+from typing import Callable
 
-@jax.jit
-def V(x, a=1.0, b=1.0):
-    return a * (x[0]**2 - b)**2 + 0.5 * jnp.sum(x[1:]**2)
+def make_potential(a: float = 1.0, b: float = 1.0) -> Callable[[jax.Array], jax.Array]:
+    @jax.jit
+    def V(x: jax.Array) -> jax.Array:
+        double_well = (a/b**4) * (x[0] ** 2 - b) ** 2
+        harmonic    = 0.5 * jnp.dot(x[1:], x[1:])
+        return double_well + harmonic
+ 
+    return V
 
 def find_plateau(R_values, threshold=0.05, obs="_"):
-
     R = list(R_values)
 
     for k in range(2, len(R)):
@@ -20,7 +25,7 @@ def find_plateau(R_values, threshold=0.05, obs="_"):
             return R_plateau, tau
 
     # fallback
-    print(f"Warning: no plateau found for {obs}, using last R")
+    print(f"_Warning: no plateau found for {obs}, using last R")
     R_plateau = R[-1]
     tau = 0.5 * (R_plateau - 1.0)
     return R_plateau, tau
@@ -36,7 +41,7 @@ def blocking_analysis(data, threshold=0.01, obs="_"):
     cur = x.copy()
     m = 1
 
-    # blocling diminuendo di 1 la dimensione ad ogni iterazione, fino a quando non rimangono almeno 2 blocchi
+    # blocling decreasing the size by 1 at each iteration, until at least 2 blocks remain
     while cur.shape[0] >= 2:
 
         if cur.shape[0] % 2 == 1:
@@ -55,34 +60,27 @@ def blocking_analysis(data, threshold=0.01, obs="_"):
     M = data.shape[0]
     sigma_mean = jnp.sqrt(R_plateau * varX / M)
     return sigma_mean, tau
+   
 
-def autocorr(x):
-    x = np.asarray(x)
-    N = len(x)
-    x = x - np.mean(x)
-    fft = np.fft.fft(x, n=2*N)
-    acf = np.fft.ifft(fft * np.conjugate(fft))[:N].real
-    acf /= acf[0]
-    return acf
-
-def integrated_autocorrelation_time(x, c=6.0):
-    """
-    Metodo di Madras–Sokal (Gamma-method).
-    c = fattore della finestra (tipicamente 4–8)
-    """
-    ac = autocorr(x)
-    tau = 0.5
-    for t in range(1, len(ac)):
-        if ac[t] < 0:   # autocorrelazione rumorosa → fermiamo
-            break
-        tau += ac[t]
-        # Finestra automatica (criterio di Sokal)
-        if t > c * tau:
-            break
+def autocorrelation_time(data):
+    # no use of bloccking analysis, beacuse no plateau was found for tau_x
+    data = np.asarray(data, dtype=np.float64)
+    N = len(data)
+    data_centered = data - np.mean(data)
+    # FFT-based autocorrelation
+    fft = np.fft.rfft(data_centered, n=2*N)
+    power = fft * np.conj(fft)
+    # the correlation funztion is: chi (k) = <x_i x_{i+k}> - <x_i> <x_{i+k}>
+    chi = np.fft.irfft(power)[:N].real / (N - np.arange(N))
+    if chi[0] == 0:
+        return 0.0
+    chi /= chi[0]
+    # tau = sum (1 - k/M) chi(k) / chi(0)
+    tau = np.sum((1 - np.arange(N) / N) * chi)
     return tau
 
-def append_observables(results, trajectories, D, T, trajectory, acceptance_rate, a=1.0, b=1.0, threshold=0.01):
-    energies = np.array(jax.vmap(lambda x: V(x, a, b))(trajectory))
+def append_observables(results,D: int,T,trajectory,acceptance_rate,V: Callable,threshold: float = 0.01, kb: float = 8.617333262145e-5):
+    energies = np.array(jax.vmap(lambda x: V(x))(trajectory))
     energies2 = energies**2
 
     # blocking for E
@@ -91,13 +89,13 @@ def append_observables(results, trajectories, D, T, trajectory, acceptance_rate,
 
     # blocking for Cv
     E2_mean_err, _ = blocking_analysis(energies2, threshold, obs="Cv")
-    Cv = (np.mean(energies2) - E_mean**2) / T**2
-    # error propagation for Cv
-    Cv_err = (E2_mean_err + 2 * E_mean * E_mean_err) / T**2
+    Cv = (np.mean(energies2) - E_mean**2) / (kb * T**2)
+    # error propagation for Cv = (E2_mean - E_mean^2) / (k_b * T^2)
+    Cv_err = (E2_mean_err + 2 * E_mean * E_mean_err) / (kb * T**2)
 
     #tau_x
     x = np.array(trajectory[:, 0])
-    tau_x = integrated_autocorrelation_time(x)
+    tau_x = autocorrelation_time(x)
 
     results[D]["T"].append(T)
     results[D]["E_mean"].append(E_mean)
@@ -106,6 +104,5 @@ def append_observables(results, trajectories, D, T, trajectory, acceptance_rate,
     results[D]["Cv_err"].append(Cv_err)
     results[D]["acceptance"].append(acceptance_rate)
     results[D]["tau_x"].append(tau_x)
-
-    trajectories[D].append(trajectory[:, 0])
+    results[D]["trajectory_x"].append(trajectory[:, 0])
     
