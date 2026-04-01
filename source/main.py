@@ -8,20 +8,21 @@ from tqdm import tqdm
 
 def main():
     dimensions   = [1, 2, 3, 5]
-    # temperatures (K) from 10K to 1000K, one T evry 10K
-    temperatures = jnp.linspace(5, 1005, 100)
+    # temperatures (K) from 5 to 1005 (one T every 10K) K is Kelvin
+    temperatures = jnp.arange(5, 1005, 10)
     # k_b in eV/K
     kb = 8.617333262145e-5
     #MCMC parameters
-    n_thermalization = 2000
-    n_steps = 103000
+    n_thermalization = 1500
+    n_steps = 150000
     step_size = 0.1
     # potential parameters
     a = 0.1
     b = 1.0
     V = obs.make_potential(a, b)
-    #blocking threshold
-    threshold = 0.2
+    #blocking parameters
+    tollerance = 0.10 # 11% of the mean value of the observable, in log scale
+    window = 3 # number of consecutive values to consider for the plateau detection, in log scale
 
     #thermalization example for 3 configurations
     D_demo, T_demo = 5, 100
@@ -53,32 +54,37 @@ def main():
             "Cv": [],
             "Cv_err": [],
             "acceptance": [],
-            "tau_x": [],
             "trajectory_x": []
         }
 
-        gen_config = metro.make_config_generator(D, "ones")
+        gen_config = metro.make_config_generator(D, "normal")
+        run_first_therm = metro.make_simulation(D, n_thermalization*10, V, kb)
         run_therm  = metro.make_simulation(D, n_thermalization, V, kb)
         run_prod   = metro.make_simulation(D, n_steps, V, kb)
 
         x, key = gen_config(key)
         for T in tqdm(temperatures, desc=f"D={D}", unit="T"):
-            
             # thermalization 
-            _, _, key , x = run_therm(key, T, step_size, x)
+            if T == temperatures[0]:
+                _, _, key , x = run_first_therm(key, T, step_size, x) # thermalization for the first temperature, starting from a fixed configuration (normal distribution)
+            _, _, key , x = run_therm(key, T, step_size, x) # thermalization for the other temperatures, starting from the last configuration of the previous thermalization
+
             # x is the last configuration of the thermalization, used as initial configuration for the production
             # production
             trajectory, acceptance_rate, key , x = run_prod(key, T, step_size, x)
             # x is the last configuration of the trajectory, used as initial configuration for the next temperature
 
             # append observables to results
-            obs.append_observables(results, D, T, trajectory, acceptance_rate, V, threshold, kb)
+            obs.append_observables(results, D, T, trajectory, acceptance_rate, V, tollerance,window, kb)
 
     # plot results
     plot.plot_obs_D_T(results, dimensions, "E_mean", error=True)
     plot.plot_obs_D_T(results, dimensions, "Cv", error=True)
-    plot.plot_obs_D_T(results, dimensions, "tau_x")
     plot.plot_obs_D_T(results, dimensions, "acceptance")
+
+    Ts =[temperatures[0],temperatures[4], temperatures[6], temperatures[15], temperatures[55], temperatures[-1]]
+    plot.plot_trajectory_x_relative_freq(results, 2, Ts)
+    plot.plot_trajectory_x_relative_freq(results, 5, Ts)
 
 if __name__ == "__main__":
     main()

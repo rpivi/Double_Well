@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import os
 import jax
 import jax.numpy as jnp
 from typing import Callable
 
 REPORT_DIR = os.path.join(os.path.dirname(__file__), "..", "report")
-
 
 def _ensure_report_dir():
     os.makedirs(REPORT_DIR, exist_ok=True)
@@ -73,3 +73,23 @@ def plot_obs_D_T(results, dimensions, observable, error=None):
         plt.savefig(filepath, dpi=150, bbox_inches="tight")
         print(f"Grafico salvato in: {filepath}")
         plt.close()
+
+def plot_trajectory_x_relative_freq(results, D, Ts):
+    #subplot of the histogram of the relative frequency of x[0] for different temperatures, for a specific D
+    _ensure_report_dir()
+    plt.figure(figsize=(12, 8))
+    for i, T in enumerate(Ts):
+        plt.subplot(2, 3, i+1)
+        trajectory_x = results[D]["trajectory_x"][results[D]["T"].index(T)]
+        plt.hist(trajectory_x, bins=50, 
+         weights=np.ones(len(trajectory_x)) / len(trajectory_x))
+        plt.xlabel("x[0]")
+        plt.ylabel("Frequenza relativa")
+        plt.title(f"D={D}, T={T}")
+        plt.grid()
+    plt.tight_layout()
+    filename = f"trajectory_x_relative_freq_D{D}.png"
+    filepath = os.path.join(REPORT_DIR, filename)
+    plt.savefig(filepath, dpi=150, bbox_inches="tight")
+    print(f"Grafico salvato in: {filepath}")
+    plt.close()
