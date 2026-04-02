@@ -74,7 +74,27 @@ def blocking_analysis(data, window, threshold, obs="_"):
     sigma_mean = jnp.sqrt(R_plateau * varX / M)
     return sigma_mean, tau
 
-def append_observables(results,D: int,T,trajectory,acceptance_rate,V: Callable,tolerance: float = 0.01, window: int = 5, kb: float = 8.617333262145e-5):
+def autocorr_fft(x):
+    x = x - np.mean(x)
+    N = len(x)
+    f = np.fft.fft(x, n=2*N)
+    acf = np.fft.ifft(f * np.conjugate(f))[:N].real
+    acf /= acf[0]
+    return acf
+
+#  tau with Sokal method
+def tau_int(x, c=5):
+    acf = autocorr_fft(x)
+    tau = 0.5
+    for t in range(1, len(acf)):
+        if acf[t] <= 0:
+            break
+        tau += acf[t]
+        if t > c * tau:
+            break
+    return tau
+
+def append_observables(results,D: int,T,trajectory,acceptance_rate,V: Callable,tolerance: float = 0.01, window: int = 5,c: int = 5, kb: float = 8.617333262145e-5):
     energies = np.array(jax.vmap(lambda x: V(x))(trajectory))
     energies2 = energies**2
 
@@ -88,6 +108,9 @@ def append_observables(results,D: int,T,trajectory,acceptance_rate,V: Callable,t
     # error propagation for Cv = (E2_mean - E_mean^2) / (k_b * T^2)
     Cv_err = (E2_mean_err + 2 * E_mean * E_mean_err) / (kb * T**2)
 
+    # tau for x[0]
+    tau_x = tau_int(trajectory[:, 0],c)
+
     results[D]["T"].append(T)
     results[D]["E_mean"].append(E_mean)
     results[D]["E_mean_err"].append(E_mean_err)
@@ -95,5 +118,6 @@ def append_observables(results,D: int,T,trajectory,acceptance_rate,V: Callable,t
     results[D]["Cv_err"].append(Cv_err)
     results[D]["acceptance"].append(acceptance_rate)
     results[D]["trajectory_x"].append(trajectory[:, 0])
+    results[D]["tau_x"].append(tau_x)
 
     

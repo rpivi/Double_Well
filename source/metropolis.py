@@ -6,8 +6,6 @@ def make_config_generator(D: int, init_type: str = "uniform") -> Callable[[jax.A
     def _generate_config(key: jax.Array) -> tuple[jax.Array, jax.Array]:
         if init_type == "ones":
             return jnp.ones(D), key
-        elif init_type == "-ones":
-            return -jnp.ones(D), key
         elif init_type == "normal":
             key, subkey = jax.random.split(key)
             return jax.random.normal(subkey, shape=(D,)), key
