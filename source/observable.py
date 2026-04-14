@@ -85,12 +85,13 @@ def autocorr_fft(x):
 #  tau with Sokal method
 def tau_int(x, c=5):
     acf = autocorr_fft(x)
+    N = len(acf)
     tau = 0.5
-    for t in range(1, len(acf)):
-        if acf[t] <= 0:
-            break
+    window = 1
+    for t in range(1, N):
         tau += acf[t]
         if t > c * tau:
+            window = t
             break
     return tau
 

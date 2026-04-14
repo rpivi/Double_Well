@@ -77,20 +77,16 @@ def main():
             obs.append_observables(results, D, T, trajectory, acceptance_rate, V, tollerance,window, c, kb)
     
     # plot results
-    plot.plot_obs_D_T(results, dimensions, "E_mean", error=True)
-    plot.plot_obs_D_T(results, dimensions, "Cv", error=True)
-    plot.plot_obs_D_T(results, dimensions, "acceptance")
+    plot.plot_obs_D_T(results, dimensions, "E_mean", error=True, a=a, b=b)
+    plot.plot_obs_D_T(results, dimensions, "Cv", error=True, a=a, b=b)
+    plot.plot_obs_D_T(results, dimensions, "acceptance", a=a, b=b)
+
     Ds = [1, 4]
-    plot.plot_tau(results, Ds)
+    plot.plot_tau(results, Ds, a=a, b=b)
 
-    #plotting Ts
-    Ts =[temperatures[0], temperatures[20], temperatures[80], temperatures[-1]]
-    
-    plot.plot_trajectory_x_relative_freq(results, dimensions, Ts)
-
-    #plotting Ts
-    Ts =[temperatures[0], temperatures[20], temperatures[-1]]
-    plot.plot_trajectory_x_t(results, Ds, Ts)
+    Ds = [2, 4]
+    Ts =[temperatures[1], temperatures[19], temperatures[-1]]
+    plot.plot_trajectory_2d(results, Ds, Ts)
     
 if __name__ == "__main__":
     main()
