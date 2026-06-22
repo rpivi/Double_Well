@@ -69,7 +69,7 @@ def blocking_analysis(data, window, threshold, obs="_"):
         # blocking → media di coppie
         cur = 0.5 * (cur[0::2] + cur[1::2])
         m *= 2
-    R_plateau, tau = find_plateau(R_list, threshold, window, obs)
+    R_plateau, tau = find_plateau(R_list, window, threshold, obs)
     M = data.shape[0]
     sigma_mean = jnp.sqrt(R_plateau * varX / M)
     return sigma_mean, tau
@@ -101,10 +101,10 @@ def append_observables(results,D: int,T,trajectory,acceptance_rate,V: Callable,t
 
     # blocking for E
     E_mean =np.mean(energies)
-    E_mean_err, _ = blocking_analysis(energies, tolerance, window, obs="E_mean")
+    E_mean_err, _ = blocking_analysis(energies, window, tolerance, obs="E_mean")
 
     # blocking for Cv
-    E2_mean_err, _ = blocking_analysis(energies2, tolerance, window, obs="Cv",)
+    E2_mean_err, _ = blocking_analysis(energies2, window, tolerance, obs="Cv",)
     Cv = (np.mean(energies2) - E_mean**2) / (kb * T**2)
     # error propagation for Cv = (E2_mean - E_mean^2) / (k_b * T^2)
     Cv_err = (E2_mean_err + 2 * E_mean * E_mean_err) / (kb * T**2)

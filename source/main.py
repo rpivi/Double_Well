@@ -83,10 +83,6 @@ def main():
 
     Ds = [1, 4]
     plot.plot_tau(results, Ds, a=a, b=b)
-
-    Ds = [2, 4]
-    Ts =[temperatures[1], temperatures[19], temperatures[-1]]
-    plot.plot_trajectory_2d(results, Ds, Ts)
     
 if __name__ == "__main__":
     main()
