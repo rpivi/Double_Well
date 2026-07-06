@@ -17,7 +17,7 @@ def main():
     n_steps = 300000
     step_size = 0.1
     # potential parameters
-    a = 0.01
+    a = 0.1
     b = 1.0
     V = obs.make_potential(a, b)
     #blocking parameters
