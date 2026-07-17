@@ -76,7 +76,7 @@ I grafici seguenti sono stati generati con una versione ridotta della simulazion
 
 **Termalizzazione.** Confronto tra due inizializzazioni diverse (configurazione fissa vs. casuale): entrambe le catene convergono rapidamente alla stessa regione di equilibrio, a conferma dell'ergodicità della catena nel regime di temperatura considerato.
 
-![Termalizzazione](report/thermalization_energies_D4_T350.00.png)
+![Termalizzazione](report/thermalization_energies_D4_T300.00.png)
 
 **Energia media vs temperatura.** Come atteso da equipartizione, l'energia media cresce con la temperatura e con la dimensionalità D (più gradi di libertà armonici contribuiscono linearmente all'energia).
 
