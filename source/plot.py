@@ -102,8 +102,8 @@ def plot_tau(results, dimensions, a=None, b=None):
     #plot skipping the first 3 temperatures to avoid the low T regime where tau is very large and dominates the plot
     for D in dimensions:
         plt.plot(
-                results[D]["T"][3:],
-                results[D]["tau_x"][3:],
+                results[D]["T"],
+                results[D]["tau_x"],
                 marker='o',
                 label=f"D={D}"
             )

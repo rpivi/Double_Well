@@ -9,12 +9,12 @@ from tqdm import tqdm
 def main():
     dimensions   = [1, 2, 3, 4]
     # temperatures (K) from 5 to 1015 (one T every 10K) K is Kelvin
-    temperatures = jnp.arange(5, 1015, 10)
+    temperatures = jnp.arange(100, 1010, 10)
     # k_b in eV/K
     kb = 8.617333262145e-5
     #MCMC parameters
     n_thermalization = 1000
-    n_steps = 300000
+    n_steps = 100000 # 10^5
     step_size = 0.1
     # potential parameters
     a = 0.1
@@ -81,7 +81,7 @@ def main():
     plot.plot_obs_D_T(results, dimensions, "Cv", error=True, a=a, b=b)
     plot.plot_obs_D_T(results, dimensions, "acceptance", a=a, b=b)
 
-    Ds = [1, 4]
+    Ds = [1,3, 4]
     plot.plot_tau(results, Ds, a=a, b=b)
     
 if __name__ == "__main__":
