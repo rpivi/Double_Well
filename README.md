@@ -98,7 +98,6 @@ I grafici seguenti sono stati generati con una versione ridotta della simulazion
 
 - A basse temperature il campionamento Metropolis standard soffre di **mode trapping**: la catena fatica ad attraversare la barriera di potenziale tra le due buche, portando a stime di `τ` fortemente sottostimate o instabili se non diagnosticate correttamente (si veda il warning "plateau not found" emesso da `find_plateau` quando il plateau nel blocking non viene rilevato entro la finestra data).
 - Le incertezze riportate sono valide nella misura in cui la catena ha effettivamente raggiunto l'equilibrio ergodico nel numero di passi simulato; a T molto basse questa condizione va verificata con cura (finestra di blocking più ampia, controllo incrociato con lo stimatore di Sokal).
-- Questo codice costituisce la baseline MCMC standard di un progetto di tesi più ampio, che confronta questo approccio con metodi basati su **Boltzmann Generators** (normalizing flow) e **Flow-MCMC**, allo scopo di valutare vantaggi e limiti di ciascun metodo di campionamento nel regime di bassa temperatura dove il sistema Metropolis classico è affetto da critical slowing down.
 
 ## Autore
 
