@@ -120,6 +120,7 @@ def plot_tau(results, dimensions, a=None, b=None):
                     edgecolor="black",
                     alpha=0.9)           )
 
+    plt.yscale('symlog', linthresh=10)
     plt.xlabel("Temperatura")
     plt.ylabel("Tau")
     plt.title("Tempo di autocorrelazione integrato di x1 vs Temperatura per diverse dimensioni")
