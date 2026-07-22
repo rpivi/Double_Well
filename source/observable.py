@@ -12,34 +12,23 @@ def make_potential(a: float = 1.0, b: float = 1.0) -> Callable[[jax.Array], jax.
  
     return V
 
-def find_plateau(R, window=3, tolerance=0.2, obs="_"):
+def find_plateau(R, window=3, tollerance=0.2, obs="_"): #there is a abs tol to avoid problems with very small values of R
     window = int(window)
     R = np.array(R, dtype=float)
-
-    # we use log because R can grow esponenzialmente, and we want to detect plateaus in a more stable way
     logR = np.log(R)
 
     for k in range(window, len(R)):
-
-        # 1. Window of previous values in log scale
         segment = logR[k-window:k]
-
-        # 2. local mean in log scale
         mean = np.mean(segment)
-
-        # 3. STD of log values in the window
         std = np.std(segment)
+        thresh = max(0.001, tollerance * abs(mean)) 
 
-        # 4. Check of plateau:
-        #    Last values should be close to the local mean, within tolerance * mean (in log scale)
-        if abs(logR[k] - mean) < tolerance * abs(mean) and std < tolerance * abs(mean):
-            # we want the linear value of R, not the log
+        if abs(logR[k] - mean) < thresh and std < thresh:
             R_plateau = R[k]
             tau = 0.5 * (R_plateau - 1)
             return R_plateau, tau
 
-    # --- Fall-back: plateau not found ---
-    print(f"WARNING: plateau not found for {obs}, using last value.")
+    print(f"\n WARNING: plateau not found for {obs}, using last value.")
     R_plateau = R[-1]
     tau = 0.5 * (R_plateau - 1)
     return R_plateau, tau
@@ -54,8 +43,8 @@ def blocking_analysis(data, window, threshold, obs="_"):
     cur = x.copy()
     m = 1
 
-    # blocling diminuendo di 1 la dimensione ad ogni iterazione, fino a quando non rimangono almeno 2 blocchi
-    while cur.shape[0] >= 2:
+    # blocling diminuendo di 1 la dimensione ad ogni iterazione, fino a quando non rimangono almeno 16 blocchi
+    while len(cur) >= 16:
 
         if cur.shape[0] % 2 == 1:
             cur = cur[:-1]
@@ -69,7 +58,7 @@ def blocking_analysis(data, window, threshold, obs="_"):
         # blocking → media di coppie
         cur = 0.5 * (cur[0::2] + cur[1::2])
         m *= 2
-    R_plateau, tau = find_plateau(R_list, window, threshold, obs)
+    R_plateau, tau = find_plateau(R_list,window, threshold, obs)
     M = data.shape[0]
     sigma_mean = jnp.sqrt(R_plateau * varX / M)
     return sigma_mean, tau
@@ -77,8 +66,8 @@ def blocking_analysis(data, window, threshold, obs="_"):
 def autocorr_fft(x):
     x = x - np.mean(x)
     N = len(x)
-    f = np.fft.fft(x, n=2*N)
-    acf = np.fft.ifft(f * np.conjugate(f))[:N].real
+    f = jnp.fft.fft(x, n=2*N)
+    acf = jnp.fft.ifft(f * jnp.conjugate(f))[:N].real
     acf /= acf[0]
     return acf
 
@@ -86,14 +75,23 @@ def autocorr_fft(x):
 def tau_int(x, c=5):
     acf = autocorr_fft(x)
     N = len(acf)
-    tau = 0.5
-    window = 1
-    for t in range(1, N):
-        tau += acf[t]
-        if t > c * tau:
-            window = t
-            break
-    return tau
+
+    cum = jnp.cumsum(acf[1:])          # cum[i] = sum(acf[1:i+2])
+    tau_t = 0.5 + cum                  # tau(t) per t = 1..N-1, tau_t[i] <-> t=i+1
+    t_vals = jnp.arange(1, N)
+
+    condition = t_vals > c * tau_t
+    found = jnp.any(condition)
+    idx = jnp.argmax(condition)        # primo True (0 se non trovato mai)
+
+    M = jnp.where(found, t_vals[idx], N - 1)
+    tau = jnp.where(found, tau_t[idx], tau_t[-1])
+
+    if not bool(found):
+        print("\n WARNING: windowing non convergente per tau_int, uso M=N-1.")
+
+    delta_tau = tau * jnp.sqrt(2 * (2*M + 1) / len(x))
+    return float(tau), float(delta_tau)
 
 def append_observables(results,D: int,T,trajectory,acceptance_rate,V: Callable,tolerance: float = 0.01, window: int = 5,c: int = 5, kb: float = 8.617333262145e-5):
     energies = np.array(jax.vmap(lambda x: V(x))(trajectory))
@@ -101,7 +99,7 @@ def append_observables(results,D: int,T,trajectory,acceptance_rate,V: Callable,t
 
     # blocking for E
     E_mean =np.mean(energies)
-    E_mean_err, _ = blocking_analysis(energies, window, tolerance, obs="E_mean")
+    E_mean_err, _= blocking_analysis(energies, window, tolerance, obs="E_mean")
 
     # blocking for Cv
     E2_mean_err, _ = blocking_analysis(energies2, window, tolerance, obs="Cv",)
@@ -110,7 +108,7 @@ def append_observables(results,D: int,T,trajectory,acceptance_rate,V: Callable,t
     Cv_err = (E2_mean_err + 2 * E_mean * E_mean_err) / (kb * T**2)
 
     # tau for x[0]
-    tau_x = tau_int(trajectory[:, 0],c)
+    tau_x, delta_tau = tau_int(trajectory[:, 0],c)
 
     results[D]["T"].append(T)
     results[D]["E_mean"].append(E_mean)
@@ -118,7 +116,7 @@ def append_observables(results,D: int,T,trajectory,acceptance_rate,V: Callable,t
     results[D]["Cv"].append(Cv)
     results[D]["Cv_err"].append(Cv_err)
     results[D]["acceptance"].append(acceptance_rate)
-    results[D]["trajectory_x"].append(trajectory[:, 0])
     results[D]["tau_x"].append(tau_x)
+    results[D]["delta_tau"].append(delta_tau)
 
     
