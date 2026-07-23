@@ -41,7 +41,7 @@ def plot_obs_D_T(results, dimensions, observable, error=None, a=None, b=None):
 
         plt.xlabel("Temperatura")
         plt.ylabel(observable.replace('_', ' ').capitalize())
-        plt.title(f"{observable.replace('_', ' ').capitalize()} vs Temperatura per diverse dimensioni")
+        plt.title(f"{observable.replace('_', ' ').capitalize()} vs Temperatura")
         plt.legend(loc="upper right")
         plt.grid()
 
@@ -74,7 +74,7 @@ def plot_obs_D_T(results, dimensions, observable, error=None, a=None, b=None):
                 )
         plt.xlabel("Temperatura")
         plt.ylabel(observable.replace('_', ' ').capitalize())
-        plt.title(f"{observable.replace('_', ' ').capitalize()} vs Temperatura per diverse dimensioni")
+        plt.title(f"{observable.replace('_', ' ').capitalize()} vs Temperatura")
         plt.legend()
         plt.grid()
 
@@ -123,7 +123,7 @@ def plot_tau(results, dimensions, a=None, b=None):
     plt.yscale('symlog', linthresh=10)
     plt.xlabel("Temperatura")
     plt.ylabel("Tau")
-    plt.title("Tempo di autocorrelazione integrato di x1 vs Temperatura per diverse dimensioni")
+    plt.title("Tempo di autocorrelazione integrato di x1 vs Temperatura")
     plt.legend()
     plt.grid()
 
