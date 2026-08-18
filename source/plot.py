@@ -16,8 +16,8 @@ def plot_thermalization_energies(trajectory1,trajectoryR, T, D, n_steps, V: Call
     plt.plot(jnp.arange(n_steps), jax.vmap(V)(trajectory1), label="Inizializzazione a 1")
     plt.plot(jnp.arange(n_steps), jax.vmap(V)(trajectoryR), label="Inizializzazione random")
     plt.xlabel("Passi di Metropolis")
-    plt.ylabel("Energia")
-    plt.title("Evoluzione dell'energia durante la termalizzazione per D={} e T={}".format(D, T))
+    plt.ylabel("E [eV]")
+    plt.title("Evoluzione dell'energia durante la termalizzazione per D={} e T={} K".format(D, T))
     plt.legend()
     plt.grid()
     filename = f"thermalization_energies_D{D}_T{T:.2f}.png"
@@ -28,72 +28,60 @@ def plot_thermalization_energies(trajectory1,trajectoryR, T, D, n_steps, V: Call
 
 def plot_obs_D_T(results, dimensions, observable, error=None, a=None, b=None):
     _ensure_report_dir()
-    if error is None:
-        plt.figure(figsize=(8,6))
 
-        for D in dimensions:
+    label = observable.replace('_', ' ').capitalize()
+    if observable == "E_mean":
+        label += " [eV]"
+    elif observable == "Cv":
+        label += " [eV/K]"
+
+    plt.figure(figsize=(8, 6))
+
+    for D in dimensions:
+        if error is None:
             plt.plot(
                 results[D]["T"],
                 results[D][observable],
                 marker='o',
                 label=f"D={D}"
             )
-
-        plt.xlabel("Temperatura")
-        plt.ylabel(observable.replace('_', ' ').capitalize())
-        plt.title(f"{observable.replace('_', ' ').capitalize()} vs Temperatura")
-        plt.legend(loc="upper right")
-        plt.grid()
-
-        if a is not None and b is not None:
-            param_text = (rf"$a = {a:.3f}$" + "\n" + rf"$b = {b:.3f}$")
-
-            plt.text(0.05, 0.95,param_text, transform=plt.gca().transAxes,fontsize=11,
-                verticalalignment="top",
-                bbox=dict(
-                    boxstyle="round",
-                    facecolor="white",
-                    edgecolor="black",
-                    alpha=0.9)           )
-
-        filename = f"{observable}_vs_T.png"
-        filepath = os.path.join(REPORT_DIR, filename)
-        plt.savefig(filepath, dpi=150, bbox_inches="tight")
-        print(f"Grafico salvato in: {filepath}")
-        plt.close()
-    else: # plot with error bars
-        plt.figure(figsize=(8,6))
-
-        for D in dimensions:
+        else:
             plt.errorbar(
-                    results[D]["T"],
-                    results[D][observable],
-                    yerr=results[D][f"{observable}_err"],
-                    marker='o',
-                    label=f"D={D}"
-                )
-        plt.xlabel("Temperatura")
-        plt.ylabel(observable.replace('_', ' ').capitalize())
-        plt.title(f"{observable.replace('_', ' ').capitalize()} vs Temperatura")
-        plt.legend()
-        plt.grid()
+                results[D]["T"],
+                results[D][observable],
+                yerr=results[D][f"{observable}_err"],
+                marker='o',
+                label=f"D={D}"
+            )
 
-        if a is not None and b is not None:
-            param_text = (rf"$a = {a:.3f}$" + "\n" + rf"$b = {b:.3f}$")
+    plt.xlabel("T [K]")
+    plt.ylabel(label)
+    plt.title(f"{label} vs T")
+    plt.legend(loc="upper right")
+    plt.grid()
 
-            plt.text(0.05, 0.95,param_text, transform=plt.gca().transAxes,fontsize=11,
-                verticalalignment="top",
-                bbox=dict(
-                    boxstyle="round",
-                    facecolor="white",
-                    edgecolor="black",
-                    alpha=0.9)           )
+    if a is not None and b is not None:
+        param_text = (rf"$a = {a:.3f}$" + "\n" + rf"$b = {b:.3f}$")
 
-        filename = f"{observable}_vs_T.png"
-        filepath = os.path.join(REPORT_DIR, filename)
-        plt.savefig(filepath, dpi=150, bbox_inches="tight")
-        print(f"Grafico salvato in: {filepath}")
-        plt.close()
+        plt.text(
+            0.05, 0.05, param_text,
+            transform=plt.gca().transAxes,
+            fontsize=11,
+            verticalalignment="bottom",
+            horizontalalignment="left",
+            bbox=dict(
+                boxstyle="round",
+                facecolor="white",
+                edgecolor="black",
+                alpha=0.9
+            )
+        )
+
+    filename = f"{observable}_vs_T.png"
+    filepath = os.path.join(REPORT_DIR, filename)
+    plt.savefig(filepath, dpi=150, bbox_inches="tight")
+    print(f"Grafico salvato in: {filepath}")
+    plt.close()
 
 def plot_tau(results, dimensions, a=None, b=None):
     _ensure_report_dir()
@@ -121,9 +109,9 @@ def plot_tau(results, dimensions, a=None, b=None):
                     alpha=0.9)           )
 
     plt.yscale('symlog', linthresh=10)
-    plt.xlabel("Temperatura")
+    plt.xlabel("T [K]")
     plt.ylabel("Tau")
-    plt.title("Tempo di autocorrelazione integrato di x1 vs Temperatura")
+    plt.title("Tempo di autocorrelazione integrato di x1 vs T")
     plt.legend()
     plt.grid()
 
