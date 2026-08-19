@@ -5,6 +5,16 @@ import jax
 import jax.numpy as jnp
 from typing import Callable
 
+plt.rcParams.update({
+    'font.size': 14,          # Dimensione generale del font
+    'axes.labelsize': 12,     # Dimensione etichette x e y
+    'axes.titlesize': 14,     # Dimensione titolo del grafico
+    'xtick.labelsize': 10,    # Dimensione tick sulle x
+    'ytick.labelsize': 10,    # Dimensione tick sulle y
+    'legend.fontsize': 10,    # Dimensione legenda
+    'figure.titlesize': 14
+})
+
 REPORT_DIR = os.path.join(os.path.dirname(__file__), "..", "report")
 
 def _ensure_report_dir():
